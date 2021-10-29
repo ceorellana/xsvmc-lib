@@ -431,20 +431,21 @@ class xSVMC(SVC):
         return evals
 
 
-    def  is_member_of(self, X, class_idx):
+    def is_member_of(self, X, class_idx):
         """Performs an augmented evaluation of 'X IS A', where A is the class referenced by class_idx
         
         Parameters
-        X:  ndarray of shape (n_features,) consisting of n features identified for X. 
+        X:  ndarray of shape (n_samples, n_features,) consisting of n testing samples with m features identified for X. 
         class_idx: class index
 
         Returns
-        elem : Augmented IFSElement representing the augmented evaluation of 'X IS A'.
+        elem : Array of Augmented IFSElement representing the augmented evaluation of 'X IS A' for the n testing samples.
         """
 
-        evals = self.evaluate_all_memberships(X)
+        X = X if X.ndim == 2 else np.expand_dims(X, axis=0)
+        evals = [self.evaluate_all_memberships(Xi) for Xi in X]
         
-        return evals[class_idx]
+        return [Yi[class_idx] for Yi in evals]
     
     def predict_with_context(self, X):
         """Performs an augmented prediction of the top-K classes for X 
