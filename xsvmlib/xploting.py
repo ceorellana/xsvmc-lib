@@ -136,86 +136,19 @@ class BuoyancyPlot:
             return ind, mu_values, nu_values, buoyancy_values, labels
         return ind, mu_values, nu_values, labels
 
-    def mu_nu_chart(self, title, samples_per_page, mu_color, nu_color,show_legend):
-        ind, mu_values, nu_values, labels = self.get_ifs_values()
+    def chart_values(self, title, mu_color, nu_color, show_legend, start, end, ax, buoyancy):
+        if(buoyancy):
+            ind, mu_values, nu_values, buoyancy_values, labels = self.get_ifs_values(buoyancy)
+        else:
+            ind, mu_values, nu_values, labels = self.get_ifs_values(buoyancy)
         nu_values = [-nu for nu in nu_values]
 
-        fig, ax = plt.subplots()
+        p1 = ax.bar(ind[start:end], mu_values[start:end], 0.35, label='mu', color=mu_color, edgecolor="black")
+        p2 = ax.bar(ind[start:end], nu_values[start:end], 0.35, label='nu', color=nu_color, edgecolor="black")
+        if(buoyancy):
+            p3 = ax.plot(ind[start:end], buoyancy_values[start:end], color='blue', label='buoyancy', marker=".", markersize=10, ls="--")
 
-        p1 = ax.bar(ind, mu_values, 0.35, label='mu', color=mu_color, edgecolor="black")
-        p2 = ax.bar(ind, nu_values, 0.35, label='nu', color=nu_color, edgecolor="black")
-
-        for i in range(len(ind)):
-            img = self.pro_misv_pics[i]
-            img = OffsetImage(img, zoom=self.zoom)
-            img.image.axes = ax
-
-            ab = AnnotationBbox(img, (i, mu_values[i]),  xybox=(0., -25.), frameon=False,
-                xycoords='data',  boxcoords="offset points", pad=0)
-
-            ax.add_artist(ab)
-
-            img = self.ifs_pics[i]
-            img = OffsetImage(img, zoom=self.zoom)
-            img.image.axes = ax
-
-            ab = AnnotationBbox(img, (i, 0),  xybox=(0., 0.), frameon=False,
-                xycoords='data',  boxcoords="offset points", pad=0)
-
-            ax.add_artist(ab)
-
-            img = self.con_misv_pics[i]
-            img = OffsetImage(img, zoom=self.zoom)
-            img.image.axes = ax
-
-            ab = AnnotationBbox(img, (i, nu_values[i]),  xybox=(0., 25.), frameon=False,
-                xycoords='data',  boxcoords="offset points", pad=0)
-
-            ax.add_artist(ab)
-
-        nu_values = [round(-nu, 5) for nu in nu_values]
-
-        ax.axhline(0, color='grey', linewidth=0.8)
-        if(title==None):
-            title = "Membership to class %s" % self.class_id
-        ax.set_title(title)
-        ax.set_xticks(ind)
-        ax.set_xticklabels(labels)
-        plt.yticks([])
-
-        if(show_legend):
-            ax.legend()
-
-        # Label mu and nu values
-        ax.bar_label(p1, label_type='center')
-        ax.bar_label(p2, labels=nu_values, label_type='center')
-
-        plt.text(0.09, 0.6, r'$\mu_A$', fontsize=20, transform=plt.gcf().transFigure)
-        plt.text(0.91, 0.3, r'$\nu_A$', fontsize=20, transform=plt.gcf().transFigure)
-
-        plt.xlim([-0.5, len(labels)])
-
-        if(samples_per_page is not None):
-            if(isinstance(samples_per_page,int)==False or samples_per_page<=0):
-                raise ValueError("Value provided must be a positive integer")
-            pages = ceil(len(labels)/samples_per_page)
-            ax_slider = fig.add_axes([0.1, 0.01, 0.8, 0.04])
-            slider = PageSlider(ax_slider, 'Page', pages, activecolor="orange")
-
-        plt.show()
-        
-
-    def buoyancy_chart(self, title, samples_per_page, mu_color, nu_color,show_legend):
-        ind, mu_values, nu_values, buoyancy_values, labels = self.get_ifs_values(True)
-        nu_values = [-nu for nu in nu_values]
-
-        fig, ax = plt.subplots()
-
-        p1 = ax.bar(ind, mu_values, 0.35, label='mu', color=mu_color, edgecolor="black")
-        p2 = ax.bar(ind, nu_values, 0.35, label='nu', color=nu_color, edgecolor="black")
-        p3 = ax.plot(ind, buoyancy_values, color='blue', label='buoyancy', marker=".", markersize=10, ls="--")
-
-        for i in range(len(ind)):
+        for i in range(start,end):
             # Plot positive MISV picture
             img = self.pro_misv_pics[i]
             img = OffsetImage(img, zoom=self.zoom)
@@ -250,33 +183,104 @@ class BuoyancyPlot:
         if(title==None):
             title = "Membership to class %s" % self.class_id
         ax.set_title(title)
-        ax.set_xticks(ind)
-        ax.set_xticklabels(labels)
-        plt.yticks([])
+        ax.set_xticks(ind[start:end])
+        ax.set_xticklabels(labels[start:end])
+        ax.set_yticks([])
 
         if(show_legend):
             ax.legend()
 
-        # Label with label_type 'center' instead of the default 'edge'
-        line = ax.lines[0]
-        for x_value, y_value in zip(line.get_xdata(), line.get_ydata()):
-            label = "{:.2f}".format(y_value)
-            y_padding=10
-            if(y_value<0):
-                y_padding=-10
-            ax.annotate(label,(x_value, y_value), 
-                textcoords="offset points", xytext=(0,y_padding), ha='center')
+        if(buoyancy):
+            # Draw buoyancy values
+            line = ax.lines[0]
+            for x_value, y_value in zip(line.get_xdata(), line.get_ydata()):
+                label = "{:.2f}".format(y_value)
+                y_padding=10
+                if(y_value<0):
+                    y_padding=-10
+                ax.annotate(label,(x_value, y_value), 
+                    textcoords="offset points", xytext=(0,y_padding), ha='center')
+        else:
+            # Label mu and nu values
+            nu_values = [round(-nu, 5) for nu in nu_values]
+            ax.bar_label(p1, label_type='center')
+            ax.bar_label(p2, labels=nu_values[start:end], label_type='center')  
 
-        plt.text(0.09, 0.6, r'$\mu_A$', fontsize=20, transform=plt.gcf().transFigure)
-        plt.text(0.91, 0.3, r'$\nu_A$', fontsize=20, transform=plt.gcf().transFigure)
+        ax.text(0.09, 0.6, r'$\mu_A$', fontsize=20, transform=plt.gcf().transFigure)
+        ax.text(0.91, 0.3, r'$\nu_A$', fontsize=20, transform=plt.gcf().transFigure)
+
+    def mu_nu_chart(self, title, samples_per_page, mu_color, nu_color, show_legend):
+        start = 0
+        end = len(self.ifs)
+
+        if (samples_per_page is not None):
+            if(isinstance(samples_per_page,int)==False or samples_per_page<=0):
+                raise ValueError("Value provided must be a positive integer")
+            end = samples_per_page
+
+        fig, ax = plt.subplots()
+        self.chart_values(title, mu_color, nu_color, show_legend, start, end, ax, buoyancy=False)
+
+        if(samples_per_page is not None):
+            if(isinstance(samples_per_page,int)==False or samples_per_page<=0):
+                raise ValueError("Value provided must be a positive integer")
+            pages = ceil(len(self.ifs)/samples_per_page)
+            ax_slider = fig.add_axes([0.1, 0.01, 0.8, 0.04])
+            slider = PageSlider(ax_slider, 'Page', pages, activecolor="orange")
+
+            def update(val):
+                i = int(slider.val)
+                start = samples_per_page*i
+                end = start + samples_per_page
+
+                if (end > len(self.ifs)):
+                    end = len(self.ifs)
+
+                ax.clear()
+                self.chart_values(title, mu_color, nu_color, show_legend, start, end, ax, buoyancy=False)
+                fig.canvas.draw()
+                fig.canvas.flush_events()
+
+            slider.on_changed(update)
+
+        plt.show()
+        
+
+    def buoyancy_chart(self, title, samples_per_page, mu_color, nu_color, show_legend):
+        start = 0
+        end = len(self.ifs)
+
+        if (samples_per_page is not None):
+            if(isinstance(samples_per_page,int)==False or samples_per_page<=0):
+                raise ValueError("Value provided must be a positive integer")
+            end = samples_per_page
+
+        fig, ax = plt.subplots()
+        self.chart_values(title, mu_color, nu_color, show_legend, start, end, ax, buoyancy=True)
         
         if(samples_per_page is not None):
             if(isinstance(samples_per_page,int)==False or samples_per_page<=0):
                 raise ValueError("Value provided must be a positive integer")
-            pages = ceil(len(labels)/samples_per_page)
+                
+            pages = ceil(len(self.ifs)/samples_per_page)
             ax_slider = fig.add_axes([0.1, 0.01, 0.8, 0.04])
             slider = PageSlider(ax_slider, 'Page', pages, activecolor="orange")
             fig.subplots_adjust(bottom=0.15)
+
+            def update(val):
+                i = int(slider.val)
+                start = samples_per_page*i
+                end = start + samples_per_page
+
+                if (end > len(self.ifs)):
+                    end = len(self.ifs)
+
+                ax.clear()
+                self.chart_values(title, mu_color, nu_color, show_legend, start, end, ax, buoyancy=True)
+                fig.canvas.draw()
+                fig.canvas.flush_events()
+
+            slider.on_changed(update)
 
         plt.show()
 
