@@ -120,6 +120,7 @@ class BuoyancyPlot:
         self.zoom = zoom
 
     def get_ifs_values(self, buoyancy=False):
+        """ Generate mu, nu and buoyance values for each IFS """
         ind = np.arange(len(self.ifs))
         mu_values = []
         nu_values = []
@@ -207,62 +208,18 @@ class BuoyancyPlot:
             ax.bar_label(p2, labels=nu_values[start:end], label_type='center')  
 
         ax.text(0.09, 0.6, r'$\mu_A$', fontsize=20, transform=plt.gcf().transFigure)
-        ax.text(0.91, 0.3, r'$\nu_A$', fontsize=20, transform=plt.gcf().transFigure)
+        ax.text(0.91, 0.3, r'$\nu_A$', fontsize=20, transform=plt.gcf().transFigure)        
 
-    def mu_nu_chart(self, title, samples_per_page, mu_color, nu_color, show_legend):
+    def buoyancy_chart(self, title, samples_per_page, mu_color, nu_color, show_legend, buoyancy):
+        test_size = len(self.ifs)
         start = 0
-        end = len(self.ifs)
-
-        if (samples_per_page is not None):
-            if(isinstance(samples_per_page,int)==False or samples_per_page<=0):
-                raise ValueError("Value provided must be a positive integer")
-            end = samples_per_page
+        end = test_size if samples_per_page is None else samples_per_page
 
         fig, ax = plt.subplots()
-        self.chart_values(title, mu_color, nu_color, show_legend, start, end, ax, buoyancy=False)
-
-        if(samples_per_page is not None):
-            if(isinstance(samples_per_page,int)==False or samples_per_page<=0):
-                raise ValueError("Value provided must be a positive integer")
-            pages = ceil(len(self.ifs)/samples_per_page)
-            ax_slider = fig.add_axes([0.1, 0.01, 0.8, 0.04])
-            slider = PageSlider(ax_slider, 'Page', pages, activecolor="orange")
-
-            def update(val):
-                i = int(slider.val)
-                start = samples_per_page*i
-                end = start + samples_per_page
-
-                if (end > len(self.ifs)):
-                    end = len(self.ifs)
-
-                ax.clear()
-                self.chart_values(title, mu_color, nu_color, show_legend, start, end, ax, buoyancy=False)
-                fig.canvas.draw()
-                fig.canvas.flush_events()
-
-            slider.on_changed(update)
-
-        plt.show()
+        self.chart_values(title, mu_color, nu_color, show_legend, start, end, ax, buoyancy=buoyancy)
         
-
-    def buoyancy_chart(self, title, samples_per_page, mu_color, nu_color, show_legend):
-        start = 0
-        end = len(self.ifs)
-
-        if (samples_per_page is not None):
-            if(isinstance(samples_per_page,int)==False or samples_per_page<=0):
-                raise ValueError("Value provided must be a positive integer")
-            end = samples_per_page
-
-        fig, ax = plt.subplots()
-        self.chart_values(title, mu_color, nu_color, show_legend, start, end, ax, buoyancy=True)
-        
-        if(samples_per_page is not None):
-            if(isinstance(samples_per_page,int)==False or samples_per_page<=0):
-                raise ValueError("Value provided must be a positive integer")
-                
-            pages = ceil(len(self.ifs)/samples_per_page)
+        if(samples_per_page is not None):                
+            pages = ceil(test_size/samples_per_page)
             ax_slider = fig.add_axes([0.1, 0.01, 0.8, 0.04])
             slider = PageSlider(ax_slider, 'Page', pages, activecolor="orange")
             fig.subplots_adjust(bottom=0.15)
@@ -272,11 +229,11 @@ class BuoyancyPlot:
                 start = samples_per_page*i
                 end = start + samples_per_page
 
-                if (end > len(self.ifs)):
-                    end = len(self.ifs)
+                if (end > test_size):
+                    end = test_size
 
                 ax.clear()
-                self.chart_values(title, mu_color, nu_color, show_legend, start, end, ax, buoyancy=True)
+                self.chart_values(title, mu_color, nu_color, show_legend, start, end, ax, buoyancy=buoyancy)
                 fig.canvas.draw()
                 fig.canvas.flush_events()
 
@@ -312,9 +269,13 @@ class BuoyancyPlot:
             Enable or disable value legend on the plot. If none is given, defaults to True. 
 
         """
+        if (samples_per_page is not None):
+            if(isinstance(samples_per_page,int)==False or samples_per_page<=0):
+                raise ValueError("Value provided must be a positive integer")
+        
         chart_index = CHART_TYPES.index(version)
 
         if(chart_index==0):
-            self.mu_nu_chart(title, samples_per_page, mu_color, nu_color, show_legend)
+            self.buoyancy_chart(title, samples_per_page, mu_color, nu_color, show_legend, False)
         elif(chart_index==1):
-            self.buoyancy_chart(title, samples_per_page, mu_color, nu_color, show_legend)
+            self.buoyancy_chart(title, samples_per_page, mu_color, nu_color, show_legend, True)
