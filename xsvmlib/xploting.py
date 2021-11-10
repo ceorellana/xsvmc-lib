@@ -4,7 +4,11 @@ import mpl_toolkits.axes_grid1
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+from matplotlib.backends.backend_pdf import PdfPages
+import pyx
 from math import ceil
+import glob
+import os
 
 CHART_TYPES = ['mu_nu_values', 'buoyancy_values']
 
@@ -216,7 +220,7 @@ class BuoyancyPlot:
 
         ax.set_xlim(xlim_start-.5, xlim_end+.5)
 
-        ax.text(0.09, 0.6, r'$\mu_A$', fontsize=20, transform=plt.gcf().transFigure)
+        ax.text(0.07, 0.6, r'$\mu_A$', fontsize=20, transform=plt.gcf().transFigure)
         ax.text(0.91, 0.3, r'$\nu_A$', fontsize=20, transform=plt.gcf().transFigure)        
 
     def buoyancy_chart(self, title, samples_per_page, mu_color, nu_color, show_legend, bar_align, buoyancy):
@@ -250,7 +254,44 @@ class BuoyancyPlot:
 
         plt.show()
 
-    def plot(self, version="buoyancy_values", title=None, samples_per_page=None, mu_color="white", nu_color="gray", show_legend=True, bar_align='left'):
+    def generate_charts(self, filename, title, samples_per_page, mu_color, nu_color, show_legend, bar_align, buoyancy):
+        test_size = len(self.ifs)
+        file_extension = filename.split(".")[-1]
+        if(file_extension=="pdf"):
+            pp = PdfPages(filename)
+        if(samples_per_page is None):
+            num_graphs = 1
+            samples_per_page = test_size
+        else:
+            num_graphs = ceil(test_size/samples_per_page)
+        for i in range(num_graphs):
+            start = i*samples_per_page
+            end = start + samples_per_page
+
+            if (end > test_size):
+                    end = test_size
+
+            fig, ax = plt.subplots()
+            self.chart_values(title, mu_color, nu_color, show_legend, start, end, samples_per_page, bar_align, ax, buoyancy=buoyancy)
+
+            if(file_extension=="pdf"):
+                pp.savefig(fig)
+            elif(file_extension=="eps"):
+                plt.savefig("temp/chart_%s.eps" % i, format='eps')
+        if(file_extension=="pdf"):
+            pp.close()
+            os.system(filename)
+        elif(file_extension=="eps"):
+            c = pyx.canvas.canvas()
+            all_files = glob.glob("temp/*.eps")
+            for i, file in enumerate(all_files):
+                c.insert(pyx.epsfile.epsfile(0, - i*12, file))
+            c.writeEPSfile(filename)
+            for file in os.listdir('temp'):
+                os.remove(os.path.join('temp', file))
+
+
+    def plot(self, version="buoyancy_values", title=None, samples_per_page=None, mu_color="white", nu_color="lightgray", show_legend=True, bar_align='left'):
         """ Plots the membership representation of the xAIFSElements.
 
         Parameters
@@ -292,3 +333,22 @@ class BuoyancyPlot:
             self.buoyancy_chart(title, samples_per_page, mu_color, nu_color, show_legend, bar_align, False)
         elif(chart_index==1):
             self.buoyancy_chart(title, samples_per_page, mu_color, nu_color, show_legend, bar_align, True)
+
+    def save_plot(self, filename, version="buoyancy_values", title=None, samples_per_page=None, mu_color="white", nu_color="lightgray", show_legend=True, bar_align='left'):
+        """ Save plot membership representation of the xAIFSElements.
+
+        Parameters (same as plot method save 'filename')
+        filename: string
+            Output file path/name for the plot. Currently supported formats: pdf, eps
+
+        """
+        if (samples_per_page is not None):
+            if(isinstance(samples_per_page,int)==False or samples_per_page<=0):
+                raise ValueError("Value provided must be a positive integer")
+        
+        chart_index = CHART_TYPES.index(version)
+
+        if(chart_index==0):
+            self.generate_charts(filename, title, samples_per_page, mu_color, nu_color, show_legend, bar_align, False)
+        elif(chart_index==1):
+            self.generate_charts(filename, title, samples_per_page, mu_color, nu_color, show_legend, bar_align, True)
