@@ -109,8 +109,8 @@ object_pics = []
 misvPro_pics = []
 misvCon_pics = []
 
-ifs = clf.is_member_of(X_test[:8], 0)
-test_pics = test_pics[:8]
+ifs = clf.is_member_of(X_test[:7], 0)
+test_pics = test_pics[:7]
 
 for i in range(len(ifs)):
     idxPositiveMISV = ref_SVs[ifs[i].mu_hat.misv_idx]
@@ -120,5 +120,5 @@ for i in range(len(ifs)):
     misvCon_pics.append(train_pics[idxNegativeMISV])
 
 buoy_chart = BuoyancyPlot(ifs, 0, test_pics, misvPro_pics, misvCon_pics, zoom=2)
-buoy_chart.plot(title="Digit classification - Mu-nu values", version="mu_nu_values", show_legend=False, samples_per_page=3)
-buoy_chart.plot(title="Digit classification - Buoyancy values", version="buoyancy_values", show_legend=False, samples_per_page=3)
+buoy_chart.plot(title="Digit classification - Mu-nu values", version="mu_nu_values", show_legend=False, samples_per_page=2, bar_align='center')
+buoy_chart.plot(title="Digit classification - Buoyancy values", version="buoyancy_values", show_legend=False, samples_per_page=2, bar_align='center')

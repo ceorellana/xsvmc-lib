@@ -137,7 +137,7 @@ class BuoyancyPlot:
             return ind, mu_values, nu_values, buoyancy_values, labels
         return ind, mu_values, nu_values, labels
 
-    def chart_values(self, title, mu_color, nu_color, show_legend, start, end, ax, buoyancy):
+    def chart_values(self, title, mu_color, nu_color, show_legend, start, end, samples_per_page, bar_align, ax, buoyancy):
         if(buoyancy):
             ind, mu_values, nu_values, buoyancy_values, labels = self.get_ifs_values(buoyancy)
         else:
@@ -205,18 +205,27 @@ class BuoyancyPlot:
             # Label mu and nu values
             nu_values = [round(-nu, 5) for nu in nu_values]
             ax.bar_label(p1, label_type='center')
-            ax.bar_label(p2, labels=nu_values[start:end], label_type='center')  
+            ax.bar_label(p2, labels=nu_values[start:end], label_type='center')
+
+        if (bar_align=='left'):
+            xlim_start = ind[start]
+            xlim_end = ind[start]+samples_per_page-1 if ind[end-1] == len(self.ifs)-1 and len(self.ifs)%samples_per_page!=0 else ind[end-1]
+        elif (bar_align=='center'):
+            xlim_start = ind[start]-(samples_per_page-(len(ind[start:end])))/2 if ind[end-1] == len(self.ifs)-1 and len(self.ifs)%samples_per_page!=0 else ind[start]
+            xlim_end = ind[end-1]+(samples_per_page-(len(ind[start:end])))/2 if ind[end-1] == len(self.ifs)-1 and len(self.ifs)%samples_per_page!=0 else ind[end-1]
+
+        ax.set_xlim(xlim_start-.5, xlim_end+.5)
 
         ax.text(0.09, 0.6, r'$\mu_A$', fontsize=20, transform=plt.gcf().transFigure)
         ax.text(0.91, 0.3, r'$\nu_A$', fontsize=20, transform=plt.gcf().transFigure)        
 
-    def buoyancy_chart(self, title, samples_per_page, mu_color, nu_color, show_legend, buoyancy):
+    def buoyancy_chart(self, title, samples_per_page, mu_color, nu_color, show_legend, bar_align, buoyancy):
         test_size = len(self.ifs)
         start = 0
         end = test_size if samples_per_page is None else samples_per_page
 
         fig, ax = plt.subplots()
-        self.chart_values(title, mu_color, nu_color, show_legend, start, end, ax, buoyancy=buoyancy)
+        self.chart_values(title, mu_color, nu_color, show_legend, start, end, samples_per_page, bar_align, ax, buoyancy=buoyancy)
         
         if(samples_per_page is not None):                
             pages = ceil(test_size/samples_per_page)
@@ -233,7 +242,7 @@ class BuoyancyPlot:
                     end = test_size
 
                 ax.clear()
-                self.chart_values(title, mu_color, nu_color, show_legend, start, end, ax, buoyancy=buoyancy)
+                self.chart_values(title, mu_color, nu_color, show_legend, start, end, samples_per_page, bar_align, ax, buoyancy=buoyancy)
                 fig.canvas.draw()
                 fig.canvas.flush_events()
 
@@ -241,7 +250,7 @@ class BuoyancyPlot:
 
         plt.show()
 
-    def plot(self, version="buoyancy_values", title=None, samples_per_page=None, mu_color="white", nu_color="gray", show_legend=True):
+    def plot(self, version="buoyancy_values", title=None, samples_per_page=None, mu_color="white", nu_color="gray", show_legend=True, bar_align='left'):
         """ Plots the membership representation of the xAIFSElements.
 
         Parameters
@@ -266,7 +275,11 @@ class BuoyancyPlot:
             color string format corresponds to the matplotlib Color formats available.
 
         show_legend: boolean, default=True
-            Enable or disable value legend on the plot. If none is given, defaults to True. 
+            Enable or disable value legend on the plot. If none is given, defaults to True.
+
+        bar_align: {'left', 'center'}, default='left'
+            Alignment applied to bars for last page if number of IFS do not correspond to the 'samples_per_page' value.
+            If none is given, 'left' will be used.
 
         """
         if (samples_per_page is not None):
@@ -276,6 +289,6 @@ class BuoyancyPlot:
         chart_index = CHART_TYPES.index(version)
 
         if(chart_index==0):
-            self.buoyancy_chart(title, samples_per_page, mu_color, nu_color, show_legend, False)
+            self.buoyancy_chart(title, samples_per_page, mu_color, nu_color, show_legend, bar_align, False)
         elif(chart_index==1):
-            self.buoyancy_chart(title, samples_per_page, mu_color, nu_color, show_legend, True)
+            self.buoyancy_chart(title, samples_per_page, mu_color, nu_color, show_legend, bar_align, True)
