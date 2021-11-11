@@ -141,7 +141,7 @@ class BuoyancyPlot:
             return ind, mu_values, nu_values, buoyancy_values, labels
         return ind, mu_values, nu_values, labels
 
-    def chart_values(self, title, mu_color, nu_color, show_legend, start, end, samples_per_page, bar_align, ax, buoyancy):
+    def chart_values(self, title, mu_color, nu_color, show_legend, nu_hatch, start, end, samples_per_page, bar_align, ax, buoyancy):
         if(buoyancy):
             ind, mu_values, nu_values, buoyancy_values, labels = self.get_ifs_values(buoyancy)
         else:
@@ -149,7 +149,7 @@ class BuoyancyPlot:
         nu_values = [-nu for nu in nu_values]
 
         p1 = ax.bar(ind[start:end], mu_values[start:end], 0.35, label='mu', color=mu_color, edgecolor="black")
-        p2 = ax.bar(ind[start:end], nu_values[start:end], 0.35, label='nu', color=nu_color, edgecolor="black")
+        p2 = ax.bar(ind[start:end], nu_values[start:end], 0.35, label='nu', color=nu_color, edgecolor="black", hatch=nu_hatch)
         if(buoyancy):
             p3 = ax.plot(ind[start:end], buoyancy_values[start:end], color='blue', label='buoyancy', marker=".", markersize=10, ls="--")
 
@@ -223,13 +223,13 @@ class BuoyancyPlot:
         ax.text(0.07, 0.6, r'$\mu_A$', fontsize=20, transform=plt.gcf().transFigure)
         ax.text(0.91, 0.3, r'$\nu_A$', fontsize=20, transform=plt.gcf().transFigure)        
 
-    def buoyancy_chart(self, title, samples_per_page, mu_color, nu_color, show_legend, bar_align, buoyancy):
+    def buoyancy_chart(self, title, samples_per_page, mu_color, nu_color, show_legend, nu_hatch, bar_align, buoyancy):
         test_size = len(self.ifs)
         start = 0
         end = test_size if samples_per_page is None else samples_per_page
 
         fig, ax = plt.subplots()
-        self.chart_values(title, mu_color, nu_color, show_legend, start, end, samples_per_page, bar_align, ax, buoyancy=buoyancy)
+        self.chart_values(title, mu_color, nu_color, show_legend, nu_hatch, start, end, samples_per_page, bar_align, ax, buoyancy=buoyancy)
         
         if(samples_per_page is not None):                
             pages = ceil(test_size/samples_per_page)
@@ -246,7 +246,7 @@ class BuoyancyPlot:
                     end = test_size
 
                 ax.clear()
-                self.chart_values(title, mu_color, nu_color, show_legend, start, end, samples_per_page, bar_align, ax, buoyancy=buoyancy)
+                self.chart_values(title, mu_color, nu_color, show_legend, nu_hatch, start, end, samples_per_page, bar_align, ax, buoyancy=buoyancy)
                 fig.canvas.draw()
                 fig.canvas.flush_events()
 
@@ -254,7 +254,7 @@ class BuoyancyPlot:
 
         plt.show()
 
-    def generate_charts(self, filename, title, samples_per_page, mu_color, nu_color, show_legend, bar_align, buoyancy):
+    def generate_charts(self, filename, title, samples_per_page, mu_color, nu_color, show_legend, nu_hatch, bar_align, buoyancy):
         test_size = len(self.ifs)
         file_extension = filename.split(".")[-1]
         if(file_extension=="pdf"):
@@ -272,7 +272,7 @@ class BuoyancyPlot:
                     end = test_size
 
             fig, ax = plt.subplots()
-            self.chart_values(title, mu_color, nu_color, show_legend, start, end, samples_per_page, bar_align, ax, buoyancy=buoyancy)
+            self.chart_values(title, mu_color, nu_color, show_legend, nu_hatch, start, end, samples_per_page, bar_align, ax, buoyancy=buoyancy)
 
             if(file_extension=="pdf"):
                 pp.savefig(fig)
@@ -291,7 +291,7 @@ class BuoyancyPlot:
                 os.remove(os.path.join('temp', file))
 
 
-    def plot(self, version="buoyancy_values", title=None, samples_per_page=None, mu_color="white", nu_color="lightgray", show_legend=True, bar_align='left'):
+    def plot(self, version="buoyancy_values", title=None, samples_per_page=None, mu_color="white", nu_color="lightgray", show_legend=True, nu_hatch="", bar_align='left'):
         """ Plots the membership representation of the xAIFSElements.
 
         Parameters
@@ -318,6 +318,11 @@ class BuoyancyPlot:
         show_legend: boolean, default=True
             Enable or disable value legend on the plot. If none is given, defaults to True.
 
+        nu_hatch: string, default=""
+            Add hatching pattern to nu bars. If none is given, no pattern will be used. Available patterns correspond to the
+            matplotlib 'hatch' patterns and format. See https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Patch.html#matplotlib.patches.Patch.set_hatch
+            for a full list of patterns.
+
         bar_align: {'left', 'center'}, default='left'
             Alignment applied to bars for last page if number of IFS do not correspond to the 'samples_per_page' value.
             If none is given, 'left' will be used.
@@ -330,11 +335,11 @@ class BuoyancyPlot:
         chart_index = CHART_TYPES.index(version)
 
         if(chart_index==0):
-            self.buoyancy_chart(title, samples_per_page, mu_color, nu_color, show_legend, bar_align, False)
+            self.buoyancy_chart(title, samples_per_page, mu_color, nu_color, show_legend, nu_hatch, bar_align, False)
         elif(chart_index==1):
-            self.buoyancy_chart(title, samples_per_page, mu_color, nu_color, show_legend, bar_align, True)
+            self.buoyancy_chart(title, samples_per_page, mu_color, nu_color, show_legend, nu_hatch, bar_align, True)
 
-    def save_plot(self, filename, version="buoyancy_values", title=None, samples_per_page=None, mu_color="white", nu_color="lightgray", show_legend=True, bar_align='left'):
+    def save_plot(self, filename, version="buoyancy_values", title=None, samples_per_page=None, mu_color="white", nu_color="lightgray", show_legend=True, nu_hatch="", bar_align='left'):
         """ Save plot membership representation of the xAIFSElements.
 
         Parameters (same as plot method save 'filename')
@@ -349,6 +354,6 @@ class BuoyancyPlot:
         chart_index = CHART_TYPES.index(version)
 
         if(chart_index==0):
-            self.generate_charts(filename, title, samples_per_page, mu_color, nu_color, show_legend, bar_align, False)
+            self.generate_charts(filename, title, samples_per_page, mu_color, nu_color, show_legend, nu_hatch, bar_align, False)
         elif(chart_index==1):
-            self.generate_charts(filename, title, samples_per_page, mu_color, nu_color, show_legend, bar_align, True)
+            self.generate_charts(filename, title, samples_per_page, mu_color, nu_color, show_legend, nu_hatch, bar_align, True)

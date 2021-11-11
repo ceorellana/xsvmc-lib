@@ -123,7 +123,7 @@ buoy_chart = BuoyancyPlot(ifs, 0, test_pics, misvPro_pics, misvCon_pics, zoom=1)
 
 #Generate graphs for visualization
 buoy_chart.plot(title="Digit classification - Mu-nu values", version="mu_nu_values", show_legend=False, samples_per_page=4, bar_align='center')
-buoy_chart.plot(title="Digit classification - Mu-nu values", version="buoyancy_values", show_legend=False, samples_per_page=4, bar_align='center')
+buoy_chart.plot(title="Digit classification - Mu-nu values", version="buoyancy_values", show_legend=False, samples_per_page=4, bar_align='center', nu_hatch="\\")
 
 #Save graphs on a file
 buoy_chart.save_plot("test.pdf", title="Digit classification - Buoyancy values", version="buoyancy_values", show_legend=False, samples_per_page=4, bar_align='center')
